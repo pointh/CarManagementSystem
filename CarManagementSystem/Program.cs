@@ -6,7 +6,8 @@ namespace CarManagementSystem
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!"); 
+            Console.WriteLine("Hello World!");
+            Console.WriteLine("Hello maturitní VOPáci");
         }
     }
 }
