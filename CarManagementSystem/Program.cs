@@ -24,7 +24,7 @@ namespace CarManagementSystem
     {
         public double cestRychlost, aktualRychlost;
         public double poloha;
-        public StavAuta sa;
+        public StavAuta zmenaNaTrase;
     }
 
     public class PocasiInfo
@@ -38,11 +38,16 @@ namespace CarManagementSystem
     }
     public delegate void ZmenaStavuAuta(object sender, AutoInfo inf);
     public delegate void ZmenaPocasi(object sender, PocasiInfo inf);
+    public delegate void ZmenRychlost(double delta);
     class RC
     {
         Auto[] registr;
         int idxPosledniAuto;
 
+        public RC(int maxAuta)
+        {
+            registr = new Auto[maxAuta];
+        }
         public void Add(Auto a)
         {
             registr[idxPosledniAuto++] = a;
@@ -53,7 +58,7 @@ namespace CarManagementSystem
             for (int i = 0; i < registr.Length; i++)
             {
                 if (registr[i] != null)
-                    registr[i].SnizRychlost(10);
+                    registr[i].SnizRychlost(deltaV);
             }
         }
 
@@ -70,7 +75,7 @@ namespace CarManagementSystem
 
         public void ZmenilSeStavAuta(object sender, AutoInfo ai)
         {
-            switch (ai.sa) {
+            switch (ai.zmenaNaTrase) {
                 case StavAuta.MostTrasa:
                 case StavAuta.TunelTrasa:
                     (sender as Auto).SnizRychlost(-10.0);
@@ -142,7 +147,7 @@ namespace CarManagementSystem
         {
 
             Meteo meteo = new Meteo();
-            RC ridici = new RC();
+            RC ridici = new RC(100);
             ridici.Add(new Auto());
             ridici.Add(new Auto());
             ridici.Add(new Auto());
