@@ -207,7 +207,7 @@ namespace CarManagementSystem
             ridici.Add(new Auto(3.7, 200.0));
 
             ridici.SubscribeMeteo(meteo);
-            Timer ticker = new Timer(500);
+            Timer ticker = new Timer(1500);
             ticker.Elapsed += meteo.Check;
             ridici.AddTimerToFleet(ticker);
             ticker.Start();
