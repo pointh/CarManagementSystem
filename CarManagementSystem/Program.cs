@@ -1,160 +1,51 @@
 ﻿using System;
+using System.Timers;
+using System.Diagnostics;
 
 namespace CarManagementSystem
 {
-    public enum StavAuta
+    public enum TypOmezeni
     {
-        Start,
-        Stop,
-        TrasaTunel,
-        TunelTrasa,
-        TrasaMost,
-        MostTrasa,
-        TunelMost,
-        MostTunel
+        Zadne,
+        Tunel,
+        Most
     }
 
-    public enum Pocasi
-    {
-        Mlha,
-        Mraz,
-        Sucho,
-    }
-    public class AutoInfo
-    {
-        public double cestRychlost, aktualRychlost;
-        public double poloha;
-        public StavAuta zmenaNaTrase;
-    }
-
-    public class PocasiInfo
-    {
-        public Pocasi pocasi;
-        public double teplota;
-    }
-    public class Omezeni
-    {
-        double zacatek, konec;
-    }
-    public delegate void ZmenaStavuAuta(object sender, AutoInfo inf);
+    
     public delegate void ZmenaPocasi(object sender, PocasiInfo inf);
     public delegate void ZmenRychlost(double delta);
-    class RC
-    {
-        Auto[] registr;
-        int idxPosledniAuto;
 
-        public RC(int maxAuta)
-        {
-            registr = new Auto[maxAuta];
-        }
-        public void Add(Auto a)
-        {
-            registr[idxPosledniAuto++] = a;
-        }
-
-        public void HromadnaInstrukce(double deltaV, bool svetla = false)
-        {
-            for (int i = 0; i < registr.Length; i++)
-            {
-                if (registr[i] != null)
-                    registr[i].SnizRychlost(deltaV);
-            }
-        }
-
-        public void ZmeniloSePocasi(object sender, PocasiInfo inf) {
-            if (inf.teplota < 0)
-                HromadnaInstrukce(10);
-            if (inf.pocasi == Pocasi.Mlha)
-                HromadnaInstrukce(10);
-            if (inf.teplota > 0)
-                HromadnaInstrukce(-10);
-            if (inf.pocasi == Pocasi.Sucho)
-                HromadnaInstrukce(-10);
-        }
-
-        public void ZmenilSeStavAuta(object sender, AutoInfo ai)
-        {
-            switch (ai.zmenaNaTrase) {
-                case StavAuta.MostTrasa:
-                case StavAuta.TunelTrasa:
-                    (sender as Auto).SnizRychlost(-10.0);
-                    break;
-                case StavAuta.MostTunel:
-                case StavAuta.TunelMost:
-                    break;
-                case StavAuta.TrasaMost:
-                case StavAuta.TrasaTunel:
-                    (sender as Auto).SnizRychlost(10);
-                    break;   
-            }
-        }
-
-        public void SubscribeMeteo(Meteo m)
-        {
-            m.Zmena += ZmeniloSePocasi;
-        }
-
-        public void SubscribeAuto(Auto a)
-        {
-            a.ZmenaStavu += ZmenilSeStavAuta;
-        }
-    }
-
-    class Auto
-    {
-        Guid id;
-        int citacOmezeni = 0;
-        public event ZmenaStavuAuta ZmenaStavu;
-        public double trasa, aktualniRychlost;
-        bool svetla;
-        Omezeni[] omezeni;
-
-        public Auto()
-        {
-            omezeni = new Omezeni[100];
-            id = Guid.NewGuid();
-        }
-        public void PridejOmezeni(Omezeni o)
-        {
-            omezeni[citacOmezeni++] = o;
-        }
-
-        public void Registruj(RC ridiciCentrum)
-        {
-            ridiciCentrum.Add(this);
-        }
-
-        public void SnizRychlost(double deltaV)
-        {
-            this.aktualniRychlost -= deltaV;
-        }
-    }
-
-    class Meteo
-    {
-        public event ZmenaPocasi Zmena;
-
-        public void Check()
-        {
-            PocasiInfo pocI = new PocasiInfo() { pocasi = Pocasi.Sucho, teplota = 20.0 };
-            Zmena(this, pocI);
-        }
-    }
+    
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-
+            Random r = new Random();
             Meteo meteo = new Meteo();
-            RC ridici = new RC(100);
-            ridici.Add(new Auto());
-            ridici.Add(new Auto());
-            ridici.Add(new Auto());
-            ridici.Add(new Auto());
-            ridici.Add(new Auto());
-            ridici.SubscribeMeteo(meteo);
             
+            RC ridici = new RC(100);
+            
+            Omezeni tunel = new Omezeni(TypOmezeni.Tunel, 200, 500);
+            Omezeni most = new Omezeni(TypOmezeni.Most, 550, 700);
+            Auto a = new Auto(70, 100.0);
+            a.PridejOmezeni(tunel);
+            a.PridejOmezeni(most);
+            ridici.Add(a);  
+
+            ridici.Add(new Auto(55, 100.0).GenerujNahodnaOmezeni(5, r));
+            ridici.Add(new Auto(80, 100.0).GenerujNahodnaOmezeni(3, r));
+            ridici.Add(new Auto(60, 250.0).GenerujNahodnaOmezeni(2, r));
+            ridici.Add(new Auto(90, 200.0).GenerujNahodnaOmezeni(4, r));
+            
+            ridici.SubscribeMeteo(meteo);
+            ridici.AplikujStrategii(ridici.StrategieOpatrna);
+
+            Timer ticker = new Timer(200);
+            ticker.Elapsed += meteo.Check;
+            ridici.AddTimerToFleet(ticker);
+            ticker.Start();
+
+            System.Threading.Thread.Sleep(200000);
         }
     }
 }
