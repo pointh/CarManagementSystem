@@ -5,6 +5,8 @@ using System.Timers;
 
 namespace CarManagementSystem
 {
+   
+
     public class RC
     {
         Auto[] registr;
@@ -46,34 +48,10 @@ namespace CarManagementSystem
 
         public void StrategieOpatrna(object sender, AutoInfo ai)
         {
-            switch (ai.zmenaNaTrase)
-            {
-                case AktualniZmenaAuta.MostTrasa:
-                    (sender as Auto).aktualniRychlost = (sender as Auto).beznaRychlost;
-                    break;
-                case AktualniZmenaAuta.TunelTrasa:
-                    (sender as Auto).aktualniRychlost = (sender as Auto).beznaRychlost;
-                    (sender as Auto).ZhasniSvetla();
-                    break;
-                case AktualniZmenaAuta.MostTunel:
-                    (sender as Auto).RozsvitSvetla();
-                    break;
-                case AktualniZmenaAuta.TunelMost:
-                    (sender as Auto).ZhasniSvetla();
-                    break;
-                case AktualniZmenaAuta.TrasaMost:
-                    (sender as Auto).SnizRychlost(10);
-                    break;
-                case AktualniZmenaAuta.TrasaTunel:
-                    (sender as Auto).SnizRychlost(10);
-                    (sender as Auto).RozsvitSvetla();
-                    break;
-                case AktualniZmenaAuta.StartTrasa:
-                    (sender as Auto).aktualniRychlost = (sender as Auto).beznaRychlost;
-                    break;
-                case AktualniZmenaAuta.TrasaStop:
-                    break;
-            }
+            Auto a = sender as Auto;
+
+            a.aktualniRychlost = a.defaultConditions[(int)ai.stav].rychlost;
+            a.Svetla = a.defaultConditions[(int)ai.stav].svetla;
         }
 
         public void SubscribeMeteo(Meteo m)

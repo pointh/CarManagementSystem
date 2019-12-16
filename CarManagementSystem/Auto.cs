@@ -6,19 +6,7 @@ using System.Timers;
 
 namespace CarManagementSystem
 {
-    public enum AktualniZmenaAuta
-    {
-        StartTrasa,
-        TrasaStop,
-        TrasaTunel,
-        TunelTrasa,
-        TrasaMost,
-        MostTrasa,
-        TunelMost,
-        MostTunel,
-        BezeZmeny
-    }
-
+   
     public enum AktualniStavAuta
     {
         Start,
@@ -28,11 +16,19 @@ namespace CarManagementSystem
         Stop
     }
 
-    public class AutoInfo
+    public class StandardniPodminky
+    {
+        public double rychlost;
+        public bool svetla;
+        public double[] korekceRychlosti;
+        public bool[] korekceSvetel;
+    }
+
+    public class AutoInfo:EventArgs
     {
         public double cestRychlost, aktualRychlost;
         public double poloha;
-        public AktualniZmenaAuta zmenaNaTrase;
+        public AktualniStavAuta stav;
     }
 
     public class Omezeni
@@ -48,7 +44,6 @@ namespace CarManagementSystem
     }
 
     public delegate void ZmenaStavuAuta(object sender, AutoInfo inf);
-    
 
     public class Auto
     {
@@ -56,23 +51,39 @@ namespace CarManagementSystem
         int citacOmezeni = 0;
         public event ZmenaStavuAuta ZmenaStavu;
         public double trasa, aktualniRychlost, beznaRychlost;
-        bool svetla;
+        public bool Svetla { get; set; }
         Omezeni[] omezeni;
-        AktualniStavAuta stav, minulyStav;
+        AktualniStavAuta stav;
         private double CasNaCeste { get; set; }
-        public double ujeto { get; set; }
+        public double Ujeto { get; set; }
+        public StandardniPodminky[] defaultConditions = new StandardniPodminky[Enum.GetValues(typeof(AktualniStavAuta)).Length];
 
         public Auto(double rychlost, double trasa)
         {
             omezeni = new Omezeni[100];
             id = Guid.NewGuid();
-            ujeto = 0.0;
-            svetla = false;
+            Ujeto = 0.0;
+            Svetla = false;
             this.trasa = trasa * 1000; // na metry
             beznaRychlost = rychlost;
             aktualniRychlost = 0.0;
-            stav = minulyStav = AktualniStavAuta.Start;
-
+            this.stav = AktualniStavAuta.Start;
+            defaultConditions[(int)AktualniStavAuta.Start] = 
+                new StandardniPodminky { rychlost = beznaRychlost, svetla = false };
+            defaultConditions[(int)AktualniStavAuta.Trasa] = 
+                new StandardniPodminky { rychlost = beznaRychlost, svetla = false };
+            defaultConditions[(int)AktualniStavAuta.Most] = 
+                new StandardniPodminky { rychlost = beznaRychlost - 10, svetla = false };
+            defaultConditions[(int)AktualniStavAuta.Tunel] = 
+                new StandardniPodminky
+                {
+                    rychlost = beznaRychlost - 10,
+                    svetla = true,
+                    korekceRychlosti = new double[] { 0, -10, -10 },
+                    korekceSvetel = new bool[] {false, false, true}
+                };
+            defaultConditions[(int)AktualniStavAuta.Stop] = 
+                new StandardniPodminky { rychlost = 0.0, svetla = false };
         }
         public void PridejOmezeni(Omezeni o)
         {
@@ -84,8 +95,8 @@ namespace CarManagementSystem
             for (int i = 0; i < citacOmezeni; i++)
             {
                 if (omezeni[i].typOmezeni == TypOmezeni.Most &&
-                    omezeni[i].zacatek < ujeto &&
-                    ujeto < omezeni[i].konec)
+                    omezeni[i].zacatek < Ujeto &&
+                    Ujeto < omezeni[i].konec)
                     return true;
             }
             return false;
@@ -96,8 +107,8 @@ namespace CarManagementSystem
             for (int i = 0; i < citacOmezeni; i++)
             {
                 if (omezeni[i].typOmezeni == TypOmezeni.Tunel &&
-                    omezeni[i].zacatek < ujeto &&
-                    ujeto < omezeni[i].konec)
+                    omezeni[i].zacatek < Ujeto &&
+                    Ujeto < omezeni[i].konec)
                     return true;
             }
             return false;
@@ -105,25 +116,13 @@ namespace CarManagementSystem
 
         public bool NaTrase()
         {
-            return !VTunelu() && !NaMoste() && ujeto < trasa;
+            return !VTunelu() && !NaMoste() && Ujeto < trasa;
         }
 
-        /*          Start           Trasa           Tunel           Most            Stop
-         * Start                    StartTrasa
-         * Trasa                                    TrasaTunel                      TrasaStop
-         * Tunel                    TunelTrasa                      TunelMost
-         * Most                     MostTrasa       MostTunel
-         * Stop
-         */
-        public AktualniStavAuta AktualniStav(AktualniStavAuta minulyStav)
+        public AktualniStavAuta AktualniStav()
         {
-            if (ujeto >= trasa)
+            if (Ujeto >= trasa)
                 return AktualniStavAuta.Stop;
-
-            if (minulyStav == AktualniStavAuta.Start && ujeto < trasa && NaTrase())
-            {
-                return AktualniStavAuta.Trasa;
-            }
 
             if (VTunelu())
             {
@@ -135,10 +134,7 @@ namespace CarManagementSystem
                 return AktualniStavAuta.Most;
             }
 
-            if (ujeto < trasa && NaTrase())
-                return AktualniStavAuta.Trasa;
-
-            return minulyStav;
+            return AktualniStavAuta.Trasa;
         }
 
         public Auto GenerujNahodnaOmezeni(int pocet, Random rnd)
@@ -146,7 +142,7 @@ namespace CarManagementSystem
             double start = 0.0;
             for (int i = 0; i < pocet; i++)
             {
-                double delka = 0.05 + 5 * rnd.NextDouble();
+                double delka = 50 + 500 * rnd.NextDouble();
                 start = start + (this.trasa - start) * rnd.NextDouble();
                 if (start + delka > trasa) // omezení končí za koncem trasy
                     break;
@@ -177,84 +173,56 @@ namespace CarManagementSystem
 
         public void RozsvitSvetla()
         {
-            if (svetla == false)
+            if (Svetla == false)
             {
-                svetla = true;
+                Svetla = true;
             }
         }
 
         public void ZhasniSvetla()
         {
-            if (svetla == true)
+            if (Svetla == true)
             {
-                svetla = false;
+                Svetla = false;
             }
-        }
-
-        public AktualniZmenaAuta NajdiAktualniZmenu(AktualniStavAuta minulyStav)
-        {
-            AktualniStavAuta a;
-            AktualniZmenaAuta zmenaNaTrase = AktualniZmenaAuta.BezeZmeny;
-
-            if ((a = AktualniStav(minulyStav)) != minulyStav)
-            {
-                this.stav = a;
-                if (minulyStav == AktualniStavAuta.Start)
-                    zmenaNaTrase = AktualniZmenaAuta.StartTrasa;
-                if (minulyStav == AktualniStavAuta.Trasa)
-                {
-                    if (a == AktualniStavAuta.Stop)
-                        zmenaNaTrase = AktualniZmenaAuta.TrasaStop;
-                    if (a == AktualniStavAuta.Most)
-                        zmenaNaTrase = AktualniZmenaAuta.TrasaMost;
-                    if (a == AktualniStavAuta.Tunel)
-                        zmenaNaTrase = AktualniZmenaAuta.TrasaTunel;
-                }
-                if (minulyStav == AktualniStavAuta.Most)
-                {
-                    if (a == AktualniStavAuta.Stop)
-                        zmenaNaTrase = AktualniZmenaAuta.TrasaStop;
-                    if (a == AktualniStavAuta.Trasa)
-                        zmenaNaTrase = AktualniZmenaAuta.MostTrasa;
-                    if (a == AktualniStavAuta.Tunel)
-                        zmenaNaTrase = AktualniZmenaAuta.MostTunel;
-                }
-                if (minulyStav == AktualniStavAuta.Tunel)
-                {
-                    if (a == AktualniStavAuta.Stop)
-                        zmenaNaTrase = AktualniZmenaAuta.TrasaStop;
-                    if (a == AktualniStavAuta.Trasa)
-                        zmenaNaTrase = AktualniZmenaAuta.TunelTrasa;
-                    if (a == AktualniStavAuta.Most)
-                        zmenaNaTrase = AktualniZmenaAuta.TunelMost;
-                }
-                if (minulyStav == AktualniStavAuta.Trasa && a == AktualniStavAuta.Stop)
-                    zmenaNaTrase = AktualniZmenaAuta.TrasaStop;
-                Debug.WriteLine(this);
-            }
-            this.minulyStav = a;
-            
-            return zmenaNaTrase;
         }
 
         public void Check(object sender, ElapsedEventArgs e)
         {
-            AutoInfo autoInfo = new AutoInfo() { aktualRychlost = aktualniRychlost, 
+            AutoInfo autoInfo = new AutoInfo() { 
+                aktualRychlost = aktualniRychlost, 
                 cestRychlost = beznaRychlost, 
-                poloha = ujeto };
+                poloha = Ujeto };
             CasNaCeste += 1.0;
-            ujeto += aktualniRychlost / 3.6 * 1.0;
-            autoInfo.zmenaNaTrase = NajdiAktualniZmenu(minulyStav);
-            
+            Ujeto += aktualniRychlost / 3.6 * 1.0;
+            autoInfo.stav = this.stav = AktualniStav();
+            Debug.WriteLineIf(this.stav == AktualniStavAuta.Tunel || this.stav == AktualniStavAuta.Most, this);
             ZmenaStavu(this, autoInfo);
         }
 
         public override string ToString()
         {
             string sv = "";
-            if (this.svetla)
+            string stavStr = "";
+            switch (this.stav)
+            {
+                case AktualniStavAuta.Most:
+                    stavStr = "M";
+                    break;
+                case AktualniStavAuta.Tunel:
+                    stavStr = "T";
+                    break;
+                case AktualniStavAuta.Trasa:
+                    stavStr = "T";
+                    break;
+            }
+
+            if (this.Svetla)
                 sv = "*";
-            return sv + $"ID:{this.id.ToString().Substring(0, 3)} l={this.ujeto:F3} v={this.aktualniRychlost:f3} stav {this.stav.ToString()}";
+            else
+                sv = "-";
+
+            return stavStr + sv + $"ID:{this.id.ToString().Substring(0, 3)} l={this.Ujeto:F3} v={this.aktualniRychlost:f3} stav {this.stav.ToString()}";
         }
     }
 
