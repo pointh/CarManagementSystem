@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Diagnostics;
 using System.Timers;
 
 namespace CarManagementSystem
@@ -9,8 +10,10 @@ namespace CarManagementSystem
 
     public class RC
     {
+
         Auto[] registr;
         int idxPosledniAuto;
+        ZmenaStavuAuta zmenaStavu;
 
         public RC(int maxAuta)
         {
@@ -30,19 +33,31 @@ namespace CarManagementSystem
 
         public void ZmeniloSePocasi(object sender, PocasiInfo inf)
         {
+            const double blizkoMrazu = 3.0;
             for (int i = 0; i < registr.Length && registr[i] != null; i++)
             {
-                if (inf.teplota < 0)
-                    registr[i].SnizRychlost(10);
+                
                 if (inf.pocasi == Pocasi.Mlha)
                 {
-                    registr[i].SnizRychlost(10);
-                    registr[i].RozsvitSvetla();
+                    if (inf.teplota > blizkoMrazu)
+                        registr[i].KorekceRychlostiNaPocasi = -10.0;
+                    else
+                        registr[i].KorekceRychlostiNaPocasi = -20.0;
+                    registr[i].KorekceSvetelNaPocasi = true;
                 }
-                if (inf.teplota > 0)
-                    registr[i].ZvysRychlost(10);
+                if (inf.pocasi == Pocasi.Mokro)
+                {
+                    if (inf.teplota > blizkoMrazu)
+                        registr[i].KorekceRychlostiNaPocasi = -10.0;
+                    else
+                        registr[i].KorekceRychlostiNaPocasi = -30.0;
+                    registr[i].KorekceSvetelNaPocasi = false;
+                }
                 if (inf.pocasi == Pocasi.Sucho)
-                    registr[i].ZvysRychlost(10);
+                {
+                    registr[i].KorekceRychlostiNaPocasi = 0.0;
+                    registr[i].KorekceSvetelNaPocasi = false;
+                }
             }
         }
 
@@ -50,8 +65,15 @@ namespace CarManagementSystem
         {
             Auto a = sender as Auto;
 
-            a.aktualniRychlost = a.defaultConditions[(int)ai.stav].rychlost;
-            a.Svetla = a.defaultConditions[(int)ai.stav].svetla;
+            if (ai != null)
+            {
+                a.aktualniRychlost = a.defaultConditions[(int)ai.stav].rychlost;
+                a.Svetla = a.defaultConditions[(int)ai.stav].svetla;
+            }
+            else
+            {
+                OdhlasAuto(a);
+            }
         }
 
         public void SubscribeMeteo(Meteo m)
@@ -61,10 +83,18 @@ namespace CarManagementSystem
 
         public void AplikujStrategii(ZmenaStavuAuta zmenaStavu)
         {
+            this.zmenaStavu = zmenaStavu;
             for (int i = 0; i < idxPosledniAuto; i++)
             {
                 registr[i].ZmenaStavu += zmenaStavu;
             }
+        }
+
+        private void OdhlasAuto(Auto a)
+        {
+            Debug.WriteLine($"Systém odhlašuje auto {a.id}. Doba na cestě {a.CasNaCeste}.");
+
+            registr[Array.IndexOf(registr, a)].ZmenaStavu -= this.zmenaStavu;
         }
     }
 

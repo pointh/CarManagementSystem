@@ -22,30 +22,29 @@ namespace CarManagementSystem
         {
             Random r = new Random();
             Meteo meteo = new Meteo();
-            
+
             RC ridici = new RC(100);
-            
-            Omezeni tunel = new Omezeni(TypOmezeni.Tunel, 200, 500);
-            Omezeni most = new Omezeni(TypOmezeni.Most, 550, 700);
-            Auto a = new Auto(70, 100.0);
-            a.PridejOmezeni(tunel);
-            a.PridejOmezeni(most);
+
+            Omezeni[] oArr = {
+                new Omezeni(TypOmezeni.Tunel, 200, 500),
+                new Omezeni(TypOmezeni.Most, 2550, 2700),
+                new Omezeni(TypOmezeni.Tunel, 4200, 4500),
+                new Omezeni(TypOmezeni.Most, 8550,8700)
+            };
+
+            Auto a = new Auto(100, 10.0);
+            a.PridejOmezeni(oArr);
             ridici.Add(a);
 
-            a = new Auto(55, 10.0);
+            a = new Auto(80, 4.0);
             a.PridejOmezeni(new Omezeni(TypOmezeni.Most, 350, 600));
             a.PridejOmezeni(new Omezeni(TypOmezeni.Most, 1200, 1900));
             ridici.Add(a);
 
-           
-            //ridici.Add(new Auto(80, 10.0).GenerujNahodnaOmezeni(30, r));
-            //ridici.Add(new Auto(60, 25.0).GenerujNahodnaOmezeni(20, r));
-            //ridici.Add(new Auto(90, 20.0).GenerujNahodnaOmezeni(40, r));
-            
             ridici.SubscribeMeteo(meteo);
             ridici.AplikujStrategii(ridici.StrategieOpatrna);
 
-            Timer ticker = new Timer(200);
+            Timer ticker = new Timer(100);
             ticker.Elapsed += meteo.Check;
             ridici.AddTimerToFleet(ticker);
             ticker.Start();
