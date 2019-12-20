@@ -6,7 +6,7 @@ using System.Timers;
 
 namespace CarManagementSystem
 {
-   
+    public delegate void ZmenaStavuAuta(object sender, AutoInfo inf);
     public enum AktualniStavAuta
     {
         Start,
@@ -40,8 +40,6 @@ namespace CarManagementSystem
         public TypOmezeni typOmezeni;
         public double zacatek, konec;
     }
-
-    public delegate void ZmenaStavuAuta(object sender, AutoInfo inf);
 
     public class Auto
     {

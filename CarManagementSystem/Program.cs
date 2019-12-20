@@ -11,10 +11,7 @@ namespace CarManagementSystem
         Most
     }
 
-    
     public delegate void ZmenaPocasi(object sender, PocasiInfo inf);
-    public delegate void ZmenRychlost(double delta);
-
     
     class Program
     {
@@ -49,7 +46,8 @@ namespace CarManagementSystem
             ridici.AddTimerToFleet(ticker);
             ticker.Start();
 
-            System.Threading.Thread.Sleep(200000);
+            Console.WriteLine("Stiskněte cokoliv k ukončení programu.");
+            Console.ReadKey();
         }
     }
 }
