@@ -11,7 +11,7 @@ namespace CarManagementSystem
     public class RC
     {
 
-        Auto[] registr;
+        public Auto[] registr;
         int idxPosledniAuto;
         ZmenaStavuAuta zmenaStavu;
 

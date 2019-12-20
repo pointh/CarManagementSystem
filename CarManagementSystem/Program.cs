@@ -46,6 +46,9 @@ namespace CarManagementSystem
             ridici.AddTimerToFleet(ticker);
             ticker.Start();
 
+           
+            Visual v = new Visual(ridici, meteo);
+
             Console.WriteLine("Stiskněte cokoliv k ukončení programu.");
             Console.ReadKey();
         }
