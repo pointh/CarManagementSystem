@@ -1,30 +1,28 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using CarManagementSystem.Properties;
 
 namespace CarManagementSystem
 {
+    
     class Visual
     {
-        RC ridici;
-        Meteo met;
-        Random rnd;
+        readonly RC ridici;
 
         public Visual(RC ridiciCentrum, Meteo met)
         {
+            Auto[] registr = ridiciCentrum.VratPoleRegistrovanychAut();
+
             ridici = ridiciCentrum;
-            this.met = met;
-            rnd = new Random();
             met.Zmena += ZmeniloSePocasi;
-            for (int i = 0; i < ridici.registr.Length && ridici.registr[i] != null; i++)
+            for (int i = 0; i < registr.Length && registr[i] != null; i++)
             {
-                ridici.registr[i].ZmenaStavu += UkazStav;
+                registr[i].ZmenaStavu += UkazStav;
             }
         }
 
         public void ZmeniloSePocasi(object sender, PocasiInfo inf)
         {
-            switch (inf.pocasi)
+            switch (inf.Pocasi)
             {
                 case Pocasi.Mlha:
                     Console.BackgroundColor = ConsoleColor.Gray;
@@ -38,29 +36,30 @@ namespace CarManagementSystem
             }
         }
 
-        public void UkazStav(object sender, AutoInfo ai)
+        public void UkazStav(object sender, AutoInfoEventArgs ai)
         {
 
-            //Console.Clear();
-            for (int i = 0; i<ridici.registr.Length && ridici.registr[i] != null;i++)
+            Auto[] registr = ridici.VratPoleRegistrovanychAut();
+
+            for (int i = 0; i < registr.Length && registr[i] != null; i++)
             {
                 Console.CursorVisible = false;
-                Console.CursorLeft = (int)ridici.registr[i].Ujeto / 100;
-                Console.CursorTop = i+2;
-                Console.ForegroundColor = (ConsoleColor)(i+8);
-                switch (ridici.registr[i].stav)
+                Console.CursorLeft = (int)registr[i].Ujeto / 100;
+                Console.CursorTop = i + 2;
+                Console.ForegroundColor = (ConsoleColor)(i + 8);
+                switch (registr[i].Stav)
                 {
-                    case AktualniStavAuta.Most:
-                        Console.Write("M");
+                    case AktualniStavyAuta.Most:
+                        Console.Write(Resources.AktualniStavAutaMost);
                         break;
-                    case AktualniStavAuta.Trasa:
-                        Console.Write("C");
+                    case AktualniStavyAuta.Trasa:
+                        Console.Write(Resources.AktualniStavAutaTrasa);
                         break;
-                    case AktualniStavAuta.Tunel:
-                        Console.Write("T");
+                    case AktualniStavyAuta.Tunel:
+                        Console.Write(Resources.AktualniStavAutaTunel);
                         break;
                     default:
-                        Console.Write(" ");
+                        Console.Write(Resources.AktualniStavAutaOstatni);
                         break;
                 }
             }

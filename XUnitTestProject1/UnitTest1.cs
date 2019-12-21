@@ -1,7 +1,5 @@
-using System;
-using Xunit;
 using CarManagementSystem;
-using System.Timers;
+using Xunit;
 
 namespace XUnitTestProject1
 {
@@ -16,10 +14,10 @@ namespace XUnitTestProject1
             a.PridejOmezeni(new Omezeni(TypOmezeni.Tunel, 300, 400));
             a.Ujeto = 15.0;
 
-           
+
 
         }
 
-        
+
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Timers;
-using System.Diagnostics;
+using CarManagementSystem.Properties;
 
 namespace CarManagementSystem
 {
@@ -12,7 +12,7 @@ namespace CarManagementSystem
     }
 
     public delegate void ZmenaPocasi(object sender, PocasiInfo inf);
-    
+
     class Program
     {
         static void Main()
@@ -46,11 +46,14 @@ namespace CarManagementSystem
             ridici.AddTimerToFleet(ticker);
             ticker.Start();
 
-           
+
             Visual v = new Visual(ridici, meteo);
 
-            Console.WriteLine("Stiskněte cokoliv k ukončení programu.");
+            Console.WriteLine(Resources.NapovedaKUkonceni);
+            
             Console.ReadKey();
+
+            ticker.Dispose();
         }
     }
 }
