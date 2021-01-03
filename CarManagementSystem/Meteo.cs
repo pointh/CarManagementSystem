@@ -27,14 +27,23 @@ namespace CarManagementSystem
             if (e.SignalTime.Ticks % 12 == 0)
             {
                 PocasiInfo pocI = new PocasiInfo() { pocasi = Pocasi.Sucho, teplota = 20.0 };
-                Debug.WriteLine("Sucho");
+                Debug.WriteLine("Meteo: Sucho");
                 Zmena(this, pocI);
+                return;
             }
-            else if (e.SignalTime.Ticks % 13 == 0)
+            if (e.SignalTime.Ticks % 13 == 0)
             {
                 PocasiInfo pocI = new PocasiInfo() { pocasi = Pocasi.Mraz, teplota = -10.0 };
-                Debug.WriteLine("Mráz");
+                Debug.WriteLine("Meteo: Mráz");
                 Zmena(this, pocI);
+                return;
+            }
+            if (e.SignalTime.Ticks % 23 == 0)
+            {
+                PocasiInfo pocI = new PocasiInfo() { pocasi = Pocasi.Mraz, teplota = -10.0 };
+                Debug.WriteLine("Meteo: Mlha");
+                Zmena(this, pocI);
+                return;
             }
         }
     }

@@ -16,6 +16,7 @@ namespace CarManagementSystem
         MostTrasa,
         TunelMost,
         MostTunel,
+        KonecRegistrace,
         BezeZmeny
     }
 
@@ -53,39 +54,36 @@ namespace CarManagementSystem
     public class Auto
     {
         Guid id;
-        int citacOmezeni = 0;
         public event ZmenaStavuAuta ZmenaStavu;
-        public double trasa, aktualniRychlost, beznaRychlost;
+        public double delkaTrasy, aktualniRychlost, beznaRychlost;
         bool svetla;
-        Omezeni[] omezeni;
+        List<Omezeni> omezeni;
         AktualniStavAuta stav, minulyStav;
-        private double CasNaCeste { get; set; }
-        public double ujeto { get; set; }
+        public double Ujeto { get; set; }
 
         public Auto(double rychlost, double trasa)
         {
-            omezeni = new Omezeni[100];
+            omezeni = new List<Omezeni>();
             id = Guid.NewGuid();
-            ujeto = 0.0;
+            Ujeto = 0.0;
             svetla = false;
-            this.trasa = trasa * 1000; // na metry
+            this.delkaTrasy = trasa * 1000; // na metry
             beznaRychlost = rychlost;
             aktualniRychlost = 0.0;
             stav = minulyStav = AktualniStavAuta.Start;
-
         }
         public void PridejOmezeni(Omezeni o)
         {
-            omezeni[citacOmezeni++] = o;
+            omezeni.Add(o);
         }
 
         public bool NaMoste()
         {
-            for (int i = 0; i < citacOmezeni; i++)
+            foreach ( var o in omezeni )
             {
-                if (omezeni[i].typOmezeni == TypOmezeni.Most &&
-                    omezeni[i].zacatek < ujeto &&
-                    ujeto < omezeni[i].konec)
+                if (o.typOmezeni == TypOmezeni.Most &&
+                    o.zacatek < Ujeto &&
+                    Ujeto < o.konec)
                     return true;
             }
             return false;
@@ -93,11 +91,11 @@ namespace CarManagementSystem
 
         public bool VTunelu()
         {
-            for (int i = 0; i < citacOmezeni; i++)
+            foreach (var o in omezeni)
             {
-                if (omezeni[i].typOmezeni == TypOmezeni.Tunel &&
-                    omezeni[i].zacatek < ujeto &&
-                    ujeto < omezeni[i].konec)
+                if (o.typOmezeni == TypOmezeni.Tunel &&
+                    o.zacatek < Ujeto &&
+                    Ujeto < o.konec)
                     return true;
             }
             return false;
@@ -105,7 +103,7 @@ namespace CarManagementSystem
 
         public bool NaTrase()
         {
-            return !VTunelu() && !NaMoste() && ujeto < trasa;
+            return !VTunelu() && !NaMoste() && Ujeto < delkaTrasy;
         }
 
         /*          Start           Trasa           Tunel           Most            Stop
@@ -117,10 +115,10 @@ namespace CarManagementSystem
          */
         public AktualniStavAuta AktualniStav(AktualniStavAuta minulyStav)
         {
-            if (ujeto >= trasa)
+            if (Ujeto >= delkaTrasy)
                 return AktualniStavAuta.Stop;
 
-            if (minulyStav == AktualniStavAuta.Start && ujeto < trasa && NaTrase())
+            if (minulyStav == AktualniStavAuta.Start && Ujeto < delkaTrasy && NaTrase())
             {
                 return AktualniStavAuta.Trasa;
             }
@@ -135,7 +133,7 @@ namespace CarManagementSystem
                 return AktualniStavAuta.Most;
             }
 
-            if (ujeto < trasa && NaTrase())
+            if (Ujeto < delkaTrasy && NaTrase())
                 return AktualniStavAuta.Trasa;
 
             return minulyStav;
@@ -143,22 +141,17 @@ namespace CarManagementSystem
 
         public Auto GenerujNahodnaOmezeni(int pocet, Random rnd)
         {
-            double start = 0.0;
             for (int i = 0; i < pocet; i++)
             {
-                double delka = 0.05 + 5 * rnd.NextDouble();
-                start = start + (this.trasa - start) * rnd.NextDouble();
-                if (start + delka > trasa) // omezení končí za koncem trasy
+                double start = 0.0;
+                double delka = 200 + 2000 * rnd.NextDouble();
+                start = this.delkaTrasy * rnd.NextDouble();
+                if (start + delka > delkaTrasy) // omezení končí za koncem trasy
                     break;
-                omezeni[i] = new Omezeni((TypOmezeni)rnd.Next(1, Enum.GetValues(typeof(TypOmezeni)).Length),
-                    start, start + delka);
+                omezeni.Add(new Omezeni((TypOmezeni)rnd.Next(1, Enum.GetValues(typeof(TypOmezeni)).Length),
+                    start, start + delka));
             }
             return this;
-        }
-
-        public void Registruj(RC ridiciCentrum)
-        {
-            ridiciCentrum.Add(this);
         }
 
         public void SnizRychlost(double deltaV)
@@ -201,6 +194,7 @@ namespace CarManagementSystem
                 this.stav = a;
                 if (minulyStav == AktualniStavAuta.Start)
                     zmenaNaTrase = AktualniZmenaAuta.StartTrasa;
+
                 if (minulyStav == AktualniStavAuta.Trasa)
                 {
                     if (a == AktualniStavAuta.Stop)
@@ -210,6 +204,7 @@ namespace CarManagementSystem
                     if (a == AktualniStavAuta.Tunel)
                         zmenaNaTrase = AktualniZmenaAuta.TrasaTunel;
                 }
+                
                 if (minulyStav == AktualniStavAuta.Most)
                 {
                     if (a == AktualniStavAuta.Stop)
@@ -219,6 +214,7 @@ namespace CarManagementSystem
                     if (a == AktualniStavAuta.Tunel)
                         zmenaNaTrase = AktualniZmenaAuta.MostTunel;
                 }
+                
                 if (minulyStav == AktualniStavAuta.Tunel)
                 {
                     if (a == AktualniStavAuta.Stop)
@@ -228,8 +224,12 @@ namespace CarManagementSystem
                     if (a == AktualniStavAuta.Most)
                         zmenaNaTrase = AktualniZmenaAuta.TunelMost;
                 }
-                if (minulyStav == AktualniStavAuta.Trasa && a == AktualniStavAuta.Stop)
-                    zmenaNaTrase = AktualniZmenaAuta.TrasaStop;
+                
+                if (a == AktualniStavAuta.Stop)
+                {
+                    zmenaNaTrase = AktualniZmenaAuta.KonecRegistrace;
+                    Console.WriteLine($"Auto ID:{ this.id.ToString().Substring(0, 3)} je v cíli.");
+                }
                 Debug.WriteLine(this);
             }
             this.minulyStav = a;
@@ -237,15 +237,20 @@ namespace CarManagementSystem
             return zmenaNaTrase;
         }
 
-        public void Check(object sender, ElapsedEventArgs e)
+        public void AktualizujStav(object sender, ElapsedEventArgs e)
         {
-            AutoInfo autoInfo = new AutoInfo() { aktualRychlost = aktualniRychlost, 
+            if (stav == AktualniStavAuta.Stop)
+                return;
+
+            AutoInfo autoInfo = new AutoInfo() 
+            { 
+                aktualRychlost = aktualniRychlost, 
                 cestRychlost = beznaRychlost, 
-                poloha = ujeto };
-            CasNaCeste += 1.0;
-            ujeto += aktualniRychlost / 3.6 * 1.0;
+                poloha = Ujeto 
+            };
+            Ujeto += aktualniRychlost / 3.6 * 5.0;
             autoInfo.zmenaNaTrase = NajdiAktualniZmenu(minulyStav);
-            
+            Console.WriteLine(this);
             ZmenaStavu(this, autoInfo);
         }
 
@@ -254,7 +259,8 @@ namespace CarManagementSystem
             string sv = "";
             if (this.svetla)
                 sv = "*";
-            return sv + $"ID:{this.id.ToString().Substring(0, 3)} l={this.ujeto:F3} v={this.aktualniRychlost:f3} stav {this.stav.ToString()}";
+            return sv + $"Auto ID:{this.id.ToString().Substring(0, 3)}"+
+                $" l={this.Ujeto:F3} v={this.aktualniRychlost:f3} stav {this.stav.ToString()}";
         }
     }
 

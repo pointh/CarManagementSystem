@@ -2,45 +2,52 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Timers;
+using System.Linq;
 
 namespace CarManagementSystem
 {
-    public class RC
+    public class FlotilaVozu
     {
-        Auto[] registr;
-        int idxPosledniAuto;
+        List<Auto> registr;
 
-        public RC(int maxAuta)
+        public FlotilaVozu()
         {
-            registr = new Auto[maxAuta];
+            registr = new List<Auto>();
         }
-        public void Add(Auto a)
+
+        public void PridejAuto(Auto a)
         {
-            registr[idxPosledniAuto++] = a;
+            registr.Add(a);
+        }
+
+        public void OdeberAuto(Auto a)
+        {
+            registr.Remove(a);
+            a = null;
         }
 
         public void AddTimerToFleet(Timer t)
         {
             foreach (Auto a in registr)
                 if (a != null)
-                    t.Elapsed += a.Check;
+                    t.Elapsed += a.AktualizujStav;
         }
 
         public void ZmeniloSePocasi(object sender, PocasiInfo inf)
         {
-            for (int i = 0; i < registr.Length && registr[i] != null; i++)
+            foreach (var a in registr )
             {
                 if (inf.teplota < 0)
-                    registr[i].SnizRychlost(10);
+                    a.SnizRychlost(10);
                 if (inf.pocasi == Pocasi.Mlha)
                 {
-                    registr[i].SnizRychlost(10);
-                    registr[i].RozsvitSvetla();
+                    a.SnizRychlost(10);
+                    a.RozsvitSvetla();
                 }
                 if (inf.teplota > 0)
-                    registr[i].ZvysRychlost(10);
+                    a.ZvysRychlost(10);
                 if (inf.pocasi == Pocasi.Sucho)
-                    registr[i].ZvysRychlost(10);
+                    a.ZvysRychlost(10);
             }
         }
 
@@ -71,6 +78,9 @@ namespace CarManagementSystem
                 case AktualniZmenaAuta.StartTrasa:
                     (sender as Auto).aktualniRychlost = (sender as Auto).beznaRychlost;
                     break;
+                case AktualniZmenaAuta.KonecRegistrace:
+                    OdeberAuto(sender as Auto);
+                    break;
                 case AktualniZmenaAuta.TrasaStop:
                     break;
             }
@@ -83,9 +93,9 @@ namespace CarManagementSystem
 
         public void AplikujStrategii(ZmenaStavuAuta zmenaStavu)
         {
-            for (int i = 0; i < idxPosledniAuto; i++)
+            foreach (var a in registr)
             {
-                registr[i].ZmenaStavu += zmenaStavu;
+                a.ZmenaStavu += zmenaStavu;
             }
         }
     }

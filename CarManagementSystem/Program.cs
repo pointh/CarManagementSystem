@@ -23,19 +23,19 @@ namespace CarManagementSystem
             Random r = new Random();
             Meteo meteo = new Meteo();
             
-            RC ridici = new RC(100);
+            FlotilaVozu ridici = new FlotilaVozu();
             
             Omezeni tunel = new Omezeni(TypOmezeni.Tunel, 200, 500);
             Omezeni most = new Omezeni(TypOmezeni.Most, 550, 700);
-            Auto a = new Auto(70, 100.0);
+            Auto a = new Auto(70, 11.0);
             a.PridejOmezeni(tunel);
             a.PridejOmezeni(most);
-            ridici.Add(a);  
+            ridici.PridejAuto(a);  
 
-            ridici.Add(new Auto(55, 100.0).GenerujNahodnaOmezeni(5, r));
-            ridici.Add(new Auto(80, 100.0).GenerujNahodnaOmezeni(3, r));
-            ridici.Add(new Auto(60, 250.0).GenerujNahodnaOmezeni(2, r));
-            ridici.Add(new Auto(90, 200.0).GenerujNahodnaOmezeni(4, r));
+            ridici.PridejAuto(new Auto(55, 21.0).GenerujNahodnaOmezeni(5, r));
+            ridici.PridejAuto(new Auto(80, 10.0).GenerujNahodnaOmezeni(3, r));
+            ridici.PridejAuto(new Auto(60, 12.0).GenerujNahodnaOmezeni(2, r));
+            ridici.PridejAuto(new Auto(90, 11.0).GenerujNahodnaOmezeni(4, r));
             
             ridici.SubscribeMeteo(meteo);
             ridici.AplikujStrategii(ridici.StrategieOpatrna);
@@ -45,7 +45,7 @@ namespace CarManagementSystem
             ridici.AddTimerToFleet(ticker);
             ticker.Start();
 
-            System.Threading.Thread.Sleep(200000);
+            Console.ReadLine();
         }
     }
 }
